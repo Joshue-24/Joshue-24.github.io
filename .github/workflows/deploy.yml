@@ -20,20 +20,4 @@ jobs:
 
       - name: Build with Astro
         uses: withastro/action@v3
-        # Opcional:
-        # with:
-        #   node-version: 20
-        #   path: .
-        #   package-manager: pnpm@latest
-
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+        # Puedes
