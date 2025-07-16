@@ -1,13 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy Astro to GitHub Pages
 
 on:
-  # Se ejecuta al hacer push a la rama main
   push:
     branches: [ main ]
-  # Se puede ejecutar manualmente
   workflow_dispatch:
 
-# Permisos para desplegar en GitHub Pages
 permissions:
   contents: read
   pages: write
@@ -18,16 +15,16 @@ jobs:
     name: Build Astro site
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install, build, and upload your site
+      - name: Build with Astro
         uses: withastro/action@v3
-        # Puedes configurar esto si usas otro node o gestor
+        # Opcional:
         # with:
         #   node-version: 20
-        #   package-manager: pnpm@latest
         #   path: .
+        #   package-manager: pnpm@latest
 
   deploy:
     name: Deploy to GitHub Pages
