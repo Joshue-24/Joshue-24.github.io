@@ -1,61 +1,184 @@
 ---
-title: Accessible Learning Hub
-author: Sarah Johnson
-description: An inclusive e-learning platform that adapts to various learning disabilities and provides personalized learning experiences for all students
+title: Análisis de Tráfico Vehicular con Visión por Computadora
+author: Joshue
+description: Solución integral para la monitorización y análisis en tiempo real del flujo vehicular mediante IA y procesamiento de video.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-Accessible Learning Hub transforms online education by making it truly inclusive for all learners. The platform automatically adapts content presentation based on individual needs, supporting dyslexia, ADHD, visual impairments, and other learning differences through AI-driven personalization.
+Este proyecto representa una solución robusta y escalable para la monitorización y el análisis avanzado del flujo vehicular. Su objetivo principal es automatizar el conteo y el seguimiento de vehículos en tiempo real a partir de transmisiones de video, proporcionando datos críticos para la planificación urbana, la ingeniería de tráfico y la gestión de infraestructuras viales.
 
+La funcionalidad central se basa en la aplicación de modelos de Inteligencia Artificial de última generación, que no solo identifican la presencia de vehículos, sino que también rastrean su trayectoria a través de zonas de interés predefinidas. Los datos generados, como el volumen de vehículos por segmento de carretera y el tiempo de permanencia, se exportan en formato CSV para un análisis posterior exhaustivo.
+
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-6.png" />
+<BreakoutImage src="/projects/trafic/Trafic_1.png" />
 
-## Technical Challenges
+## Implementación Técnica y Metodología
 
-The biggest challenge was creating a system that could dynamically adjust content presentation without losing educational value. We implemented an adaptive engine that modifies text layout, color schemes, and content pacing while maintaining curriculum integrity and learning objectives.
+La arquitectura del sistema se fundamenta en el procesamiento de video en tiempo real y el uso de redes neuronales convolucionales (CNNs) para la detección y clasificación de objetos.
 
-## Project Gallery
+### Detección de Vehículos (YOLOv8)
+
+Utilizamos YOLOv8 (You Only Look Once, versión 8) por su eficiencia y precisión en la detección de objetos en tiempo real. Este modelo es capaz de identificar múltiples clases de vehículos (coches, camiones, motocicletas, etc.) en cada fotograma del video.
+
+```python
+from ultralytics import YOLO
+import cv2
+
+# Cargar el modelo YOLOv8 pre-entrenado
+model = YOLO('yolov8n.pt') # 'yolov8n.pt' es la versión nano, ideal para inferencia rápida
+
+# Inicializar la captura de video
+cap = cv2.VideoCapture('ruta/a/tu/video.mp4')
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Realizar inferencia
+    results = model(frame)
+
+    # Dibujar las detecciones en el fotograma
+    annotated_frame = results[0].plot()
+
+    cv2.imshow("Detecciones de Vehículos", annotated_frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+### Seguimiento de Objetos (DeepSORT)
+
+Para el seguimiento continuo de vehículos a través de fotogramas, integramos DeepSORT (Simple Online and Realtime Tracking with a Deep Association Metric). DeepSORT asocia las detecciones de YOLOv8 con trayectorias existentes, asignando un ID único a cada vehículo y manteniéndolo a lo largo de su recorrido.
+
+```python
+# Pseudocódigo para la integración de DeepSORT
+from deep_sort_pytorch.utils.parser import get_config
+from deep_sort_pytorch.deep_sort import DeepSort
+
+# Configuración de DeepSORT
+cfg = get_config()
+cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                    max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                    nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                    max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                    use_cuda=True)
+
+# Dentro del bucle de video, después de las detecciones de YOLO:
+# xywhs: bounding boxes en formato (x_center, y_center, width, height)
+# confs: confianzas de las detecciones
+# clss: clases de las detecciones
+
+# outputs = deepsort.update(xywhs, confs, clss, frame)
+# Cada output contiene (bbox_left, bbox_top, bbox_w, bbox_h, track_id, class_id)
+```
+
+### Definición de Zonas de Interés y Conteo
+
+Se implementa un sistema para definir polígonos o líneas virtuales en el video. Cuando un vehículo cruza estas zonas, se registra su entrada/salida y se actualizan los contadores.
+
+```python
+# Ejemplo simplificado de lógica de conteo
+zones = {
+    "zona_entrada": [(x1, y1), (x2, y2), ...],
+    "zona_salida": [(x3, y3), (x4, y4), ...],
+}
+vehicle_counts = {"entrada": 0, "salida": 0}
+tracked_vehicles_in_zones = {} # {track_id: current_zone}
+
+def update_counts(track_id, bbox, frame_id):
+    # Lógica para determinar en qué zona se encuentra el vehículo
+    # y actualizar vehicle_counts y tracked_vehicles_in_zones
+    pass
+
+# Dentro del bucle de video, después de DeepSORT:
+# for track in outputs:
+#     track_id = track[4]
+#     bbox = track[0:4]
+#     update_counts(track_id, bbox, frame_id)
+```
+
+## Exportación y Análisis de Datos
+
+Los datos de conteo y seguimiento se agregan y se exportan a archivos CSV, lo que facilita su integración con herramientas de análisis de datos y sistemas de información geográfica (GIS).
+
+```python
+import csv
+
+def export_to_csv(data, filename="traffic_data.csv"):
+    with open(filename, 'a', newline='') as csvfile:
+        fieldnames = ['timestamp', 'vehicle_id', 'zone', 'direction', 'speed', 'duration']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Escribir cabecera si el archivo está vacío
+        if csvfile.tell() == 0:
+            writer.writeheader()
+
+        for row in data:
+            writer.writerow(row)
+
+# Ejemplo de datos a exportar
+# traffic_log = [
+#     {'timestamp': '...', 'vehicle_id': 1, 'zone': 'A', 'direction': 'in', 'speed': 45, 'duration': 10},
+#     {'timestamp': '...', 'vehicle_id': 2, 'zone': 'B', 'direction': 'out', 'speed': 60, 'duration': 15},
+# ]
+# export_to_csv(traffic_log)
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
-    src="/projects/project-image-1.png"
-    alt="Accessible Learning Hub student dashboard with personalized content"
+    src="/projects/trafic/Trafic_1.png"
+    alt="Captura de pantalla del sistema de análisis de tráfico mostrando vehículos detectados y zonas de interés."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-6.png"
-    alt="Content adaptation settings for different learning needs"
+    src="/projects/trafic/trafic_2.png"
+    alt="Visualización de datos de tráfico con gráficos de conteo vehicular por hora."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-2.png"
-    alt="Interactive lesson with multiple accessibility features enabled"
+    src="/projects/trafic/trafic_3.png"
+    alt="Diagrama de flujo del pipeline de procesamiento de video y análisis de IA."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-3.png"
-    alt="Learning analytics showing improvement in student engagement"
+    src="/projects/trafic/trafic_4.png"
+    alt="Interfaz de usuario para la configuración de zonas de conteo en el video."
+    width={1200}
+    height={600}
+    class="h-[250px] w-full rounded-lg object-cover"
+  />
+  <Image
+    src="/projects/trafic/trafic_2.png"
+    alt="Ejemplo de informe CSV generado con datos de tráfico."
+    width={1200}
+    height={600}
+    class="h-[250px] w-full rounded-lg object-cover"
+  />
+  <Image
+    src="/projects/trafic/trafic_mod_f.png"
+    alt="Vista aérea de una intersección monitoreada por el sistema."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-"Accessible Learning Hub has revolutionized how our students with learning differences engage with online content. The personalized adaptations have dramatically improved both comprehension and confidence."
-
-- Prof. Helen Martinez, Director of Special Education
-
-<BreakoutImage src="/projects/project-image-1.png" />
-
-Currently expanding into multi-modal content delivery and developing more sophisticated learning pattern recognition algorithms.
+Este proyecto demuestra la capacidad de la visión por computadora y la inteligencia artificial para transformar la gestión del tráfico, ofreciendo una herramienta invaluable para la toma de decisiones basada en datos y la optimización de la infraestructura urbana.

@@ -1,61 +1,123 @@
 ---
-title: HealthAccess
-author: Dr. Rachel Zhang
-description: An accessible healthcare management system designed for patients with various disabilities to independently manage their medical care
+title: Detección de Enfermedades en Plantas de Café
+author: Joshue
+description: Proyecto AgriTech para la identificación temprana y automática de enfermedades en plantas de café mediante visión por computadora.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-HealthAccess revolutionizes healthcare management by making medical information and services accessible to all patients. The platform provides multiple interaction methods including voice commands, high-contrast modes, and simplified interfaces, ensuring patients with disabilities can independently manage their healthcare.
+Este proyecto se enmarca en el ámbito de la agricultura inteligente (AgriTech) y tiene como objetivo principal asistir a los agricultores en la identificación temprana y automática de enfermedades que afectan a las plantas de café. La detección precoz es crucial para implementar tratamientos oportunos, prevenir la propagación de patógenos y, en última instancia, proteger la cosecha y la salud general de las plantaciones. El sistema utiliza técnicas avanzadas de visión por computadora para clasificar el estado de las plantas a partir de imágenes.
 
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-2.png" />
+<BreakoutImage src="/projects/cafe/cafe_01.jpeg" />
 
-## Technical Challenges
+## Implementación Técnica y Modelo de IA
 
-The biggest challenge was creating an interface that worked seamlessly with various assistive technologies while maintaining HIPAA compliance. We implemented a flexible accessibility layer that adapts to different user needs while ensuring secure access to sensitive medical information.
+La solución se basa en el uso de un modelo de detección de objetos entrenado específicamente para identificar signos de enfermedad en las hojas de café.
 
-## Project Gallery
+### Modelo YOLOv8 para Clasificación de Enfermedades
+
+Empleamos YOLOv8 (You Only Look Once, versión 8) debido a su eficiencia y capacidad para realizar inferencias rápidas. El modelo fue entrenado con un conjunto de datos diverso que incluye imágenes de hojas de café sanas y hojas afectadas por diversas enfermedades comunes. La tarea del modelo es clasificar cada planta (o parte de la planta) como "sana" o "enferma".
+
+```python
+from ultralytics import YOLO
+import cv2
+
+# Cargar el modelo YOLOv8 entrenado para enfermedades del café
+model = YOLO('./models/yolov8n_coffee_disease.pt') # Ruta a tu modelo entrenado
+
+# Clases que el modelo puede detectar
+class_names = ["sana", "enferma"]
+
+# Inicializar la captura de video o cargar una imagen
+# cap = cv2.VideoCapture(0) # Para cámara en tiempo real
+image_path = './data/sample_coffee_leaf.jpg'
+frame = cv2.imread(image_path)
+
+if frame is None:
+    print("Error: No se pudo cargar la imagen.")
+else:
+    # Realizar inferencia
+    results = model(frame)
+
+    # Procesar resultados y dibujar bounding boxes
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            conf = round(float(box.conf[0]), 2)
+            cls = int(box.cls[0])
+            label = f"{class_names[cls]}: {conf}"
+
+            color = (0, 255, 0) if class_names[cls] == "sana" else (0, 0, 255)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    cv2.imshow("Detección de Enfermedades en Café", frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+```
+
+### Preprocesamiento de Imágenes y Aumento de Datos
+
+Para mejorar la robustez del modelo, se aplicaron técnicas de preprocesamiento y aumento de datos durante el entrenamiento, como rotaciones, volteos, cambios de brillo y contraste. Esto ayuda al modelo a generalizar mejor a nuevas imágenes y condiciones de iluminación.
+
+```python
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+import cv2
+
+transform = A.Compose([
+    A.Resize(width=640, height=640),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.RandomBrightnessContrast(p=0.2),
+    A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+    ToTensorV2(),
+])
+
+# Ejemplo de aplicación a una imagen
+# image = cv2.imread("path/to/image.jpg")
+# image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+# transformed_image = transform(image=image)["image"]
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
-    src="/projects/project-image-2.png"
-    alt="HealthAccess patient dashboard with accessibility features"
+    src="/projects/cafe/cafe_01.jpeg"
+    alt="Hoja de café con signos de enfermedad detectados por el sistema."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-6.png"
-    alt="Voice command interface for medical record access"
+    src="/projects/cafe/cafe_02.jpeg"
+    alt="Planta de café sana contrastando con una enferma."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-5.png"
-    alt="High-contrast mode for medication management"
+    src="/projects/cafe/cafe_03.jpeg"
+    alt="Gráfico mostrando la precisión del modelo en la detección de enfermedades."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-1.png"
-    alt="Simplified appointment scheduling interface"
+    src="/projects/cafe/cafe_04.jpeg"
+    alt="Interfaz de usuario para la carga de imágenes y visualización de resultados."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-"HealthAccess has transformed how I manage my medical care. As someone with limited mobility, I can now schedule appointments, review test results, and communicate with my doctors independently."
-
-- Sarah Chen, Patient Advocate
-
-<BreakoutImage src="/projects/project-image-6.png" />
-
-Currently expanding into telemedicine accessibility features and developing specialized interfaces for cognitive disabilities.
+Este proyecto representa una herramienta valiosa para la agricultura moderna, permitiendo a los caficultores tomar decisiones informadas y rápidas para proteger sus cultivos. La aplicación de la visión por computadora en la detección de enfermedades no solo optimiza los recursos, sino que también contribuye a la sostenibilidad y rentabilidad de las plantaciones de café.

@@ -1,0 +1,10 @@
+---
+import Proyectos, { Content, frontmatter } from './proyectos.md';
+import MarkdownLayout from '../../layouts/MarkdownLayout.astro';
+
+console.log('Frontmatter de proyectos.md:', frontmatter);
+---
+
+<MarkdownLayout frontmatter={frontmatter}>
+  <Content />
+</MarkdownLayout>

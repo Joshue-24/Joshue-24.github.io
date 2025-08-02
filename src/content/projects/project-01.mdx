@@ -1,12 +1,12 @@
 ---
-title: Voice-First Smart Home Assistant
-author: John Doe
-description: A comprehensive smart home solution designed specifically for users with visual impairments, featuring voice-first interactions and haptic feedback
+title: Asistente de Hogar Inteligente con Control por Voz
+author: Joshue
+description: Una solución integral de hogar inteligente diseñada para la accesibilidad, con interacciones de voz y retroalimentación háptica.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-Our team developed an inclusive smart home solution that makes home automation accessible to everyone, with a special focus on users with visual impairments. The system uses advanced speech recognition and natural language processing to provide intuitive voice control, while incorporating haptic feedback for tactile confirmation of actions.
+Este proyecto se centra en el desarrollo de un asistente de hogar inteligente innovador, diseñado con un enfoque primordial en la accesibilidad. Su objetivo es empoderar a usuarios con diversas capacidades, especialmente aquellos con discapacidades visuales, a interactuar con su entorno doméstico de manera intuitiva y autónoma. La solución integra control por voz avanzado y retroalimentación háptica para una experiencia de usuario inclusiva y sin barreras.
 
 import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
@@ -14,50 +14,116 @@ import { Image } from 'astro:assets'
 
 <BreakoutImage src="/projects/project-image-1.png" />
 
-## Technical Challenges
+## Implementación Técnica y Desafíos
 
-One of the biggest challenges was creating a reliable voice recognition system that could work effectively in noisy environments and understand diverse speech patterns, including users with speech impediments. We solved this by implementing a custom machine learning model trained on a diverse dataset of voices and ambient conditions.
+El corazón de este sistema reside en su capacidad para interpretar comandos de voz complejos y proporcionar una respuesta táctil significativa. Los desafíos técnicos incluyeron el desarrollo de un sistema de reconocimiento de voz robusto y la integración de actuadores hápticos para una retroalimentación precisa.
 
-## Project Gallery
+### Reconocimiento de Voz y Procesamiento de Lenguaje Natural (NLP)
+
+Se utilizó un modelo de aprendizaje profundo para el reconocimiento de voz, entrenado en un conjunto de datos diverso para asegurar la comprensión de diferentes patrones de habla y acentos. El procesamiento de lenguaje natural (NLP) se encarga de interpretar la intención del usuario a partir de los comandos de voz.
+
+```python
+import speech_recognition as sr
+from transformers import pipeline
+
+# Inicializar el reconocedor de voz
+r = sr.Recognizer()
+
+# Cargar un modelo de NLP para clasificación de intenciones
+nlp_classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
+
+def process_voice_command():
+    with sr.Microphone() as source:
+        print("Di algo!")
+        audio = r.listen(source)
+
+    try:
+        command = r.recognize_google(audio, language="es-ES")
+        print(f"Comando detectado: {command}")
+
+        # Clasificar la intención del comando
+        # Esto es un ejemplo, en un sistema real se entrenaría con intenciones específicas del hogar
+        intent_result = nlp_classifier(command)
+        print(f"Intención detectada: {intent_result[0]['label']}")
+
+        return command, intent_result[0]['label']
+
+    except sr.UnknownValueError:
+        print("No pude entender el audio")
+        return None, None
+    except sr.RequestError as e:
+        print(f"Error en el servicio de reconocimiento de voz; {e}")
+        return None, None
+
+# Ejemplo de uso
+# command, intent = process_voice_command()
+# if intent == "encender_luz":
+#     print("Encendiendo la luz...")
+```
+
+### Retroalimentación Háptica
+
+La retroalimentación háptica se implementó utilizando pequeños motores de vibración controlados por un microcontrolador (ej. Arduino o Raspberry Pi). Diferentes patrones de vibración se asocian con acciones específicas (ej. una vibración corta para confirmación, una vibración larga para error).
+
+```python
+# Pseudocódigo para control háptico (ej. con una librería para Raspberry Pi GPIO)
+# import RPi.GPIO as GPIO
+# import time
+
+# VIBRATION_MOTOR_PIN = 17
+
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(VIBRATION_MOTOR_PIN, GPIO.OUT)
+
+def vibrate(pattern):
+    if pattern == "short":
+        # GPIO.output(VIBRATION_MOTOR_PIN, GPIO.HIGH)
+        # time.sleep(0.1)
+        # GPIO.output(VIBRATION_MOTOR_PIN, GPIO.LOW)
+        print("Vibración corta (confirmación)")
+    elif pattern == "long":
+        # GPIO.output(VIBRATION_MOTOR_PIN, GPIO.HIGH)
+        # time.sleep(0.5)
+        # GPIO.output(VIBRATION_MOTOR_PIN, GPIO.LOW)
+        print("Vibración larga (error)")
+
+# Ejemplo de uso
+# vibrate("short")
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
     src="/projects/project-image-1.png"
-    alt="Smart home assistant interface showing voice command visualization"
+    alt="Interfaz del asistente de hogar inteligente mostrando la visualización de comandos de voz."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
     src="/projects/project-image-2.png"
-    alt="User interacting with the smart home system via voice commands"
+    alt="Usuario interactuando con el sistema de hogar inteligente mediante comandos de voz."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
     src="/projects/project-image-3.png"
-    alt="Haptic feedback device component of the smart home system"
+    alt="Componente del dispositivo de retroalimentación háptica del sistema de hogar inteligente."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
     src="/projects/project-image-4.png"
-    alt="Dashboard showing analytics of voice command usage patterns"
+    alt="Panel de control mostrando análisis de patrones de uso de comandos de voz."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-<BlockQuote author="Maria Rodriguez, Beta Tester">
-  This system has given me back my independence at home. The voice controls are so natural, and the haptic feedback
-  helps me confirm every action without needing to see anything.
-</BlockQuote>
-
-<BreakoutImage src="/projects/project-image-2.png" />
-
-The project continues to evolve with regular updates based on user feedback, with a focus on expanding support for multiple languages and additional accessibility features.
+Este proyecto demuestra cómo la tecnología puede ser diseñada para ser inherentemente inclusiva, proporcionando soluciones prácticas que mejoran la autonomía y la calidad de vida de las personas en su propio hogar. La combinación de control por voz y retroalimentación háptica establece un nuevo estándar en la interacción con sistemas inteligentes.

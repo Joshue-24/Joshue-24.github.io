@@ -1,61 +1,101 @@
 ---
-title: SmartHome Access
-author: Emma Green
-description: An inclusive smart home automation system that enables people with mobility impairments to control their entire home environment independently
+title: Virtual-Piano-with-Camera-Control
+author: Joshue
+description: Desarrollo de un sistema interactivo que permite tocar un piano virtual mediante gestos detectados por cámara en tiempo real.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-SmartHome Access revolutionizes home automation by making it truly accessible for people with mobility impairments. The system combines voice control, eye tracking, and adaptive switches to provide multiple ways of controlling home environments, from lighting and temperature to doors and appliances.
+Este proyecto se enfoca en el diseño e implementación de un piano virtual controlado por cámara, capaz de detectar gestos y movimientos de las manos del usuario para generar notas musicales en tiempo real. El sistema utiliza visión por computadora para mapear la posición de los dedos sobre teclas virtuales, permitiendo una experiencia musical sin contacto físico.
 
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-5.png" />
+<BreakoutImage src="/projects/project-image-6.png" />
 
-## Technical Challenges
+## Implementación Técnica y Algoritmos Clave
 
-The biggest hurdle was creating a reliable multi-modal control system that could adapt to different types of mobility impairments. We developed a flexible control interface that can be customized to each user's capabilities, from eye tracking to sip-and-puff controls, while maintaining responsive and reliable operation.
+La arquitectura del sistema se basa en la detección de manos, el seguimiento de gestos y el mapeo de coordenadas sobre teclas virtuales para producir notas musicales.
 
-## Project Gallery
+### Detección de Manos (MediaPipe Hands)
 
-<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-  <Image
-    src="/projects/project-image-4.png"
-    alt="SmartHome Access control dashboard with multiple input methods"
-    width={1200}
-    height={600}
-    class="h-[250px] w-full rounded-lg object-cover"
-  />
-  <Image
-    src="/projects/project-image-5.png"
-    alt="Eye tracking interface for home control"
-    width={1200}
-    height={600}
-    class="h-[250px] w-full rounded-lg object-cover"
-  />
-  <Image
-    src="/projects/project-image-6.png"
-    alt="Adaptive switch modules for custom control layouts"
-    width={1200}
-    height={600}
-    class="h-[250px] w-full rounded-lg object-cover"
-  />
-  <Image
-    src="/projects/project-image-2.png"
-    alt="Smart home environment controlled by the system"
-    width={1200}
-    height={600}
-    class="h-[250px] w-full rounded-lg object-cover"
-  />
-</div>
+Para la detección de manos, utilizamos el modelo **MediaPipe Hands**, capaz de detectar hasta 21 puntos clave por mano en tiempo real. Esto permite seguir el movimiento de los dedos y determinar interacciones con el piano virtual.
 
-## Testimonial
+```python
+import cv2
+import mediapipe as mp
 
-"SmartHome Access has given me back my independence at home. I can control everything in my environment without assistance, and the system adapts perfectly to my changing needs throughout the day."
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.7)
+mp_drawing = mp.solutions.drawing_utils
 
-- Michael Torres, Accessibility Advocate
+cap = cv2.VideoCapture(0)
 
-<BreakoutImage src="/projects/project-image-3.png" />
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-Expanding into predictive automation and developing more sophisticated environmental control interfaces.
+    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = hands.process(image)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+    cv2.imshow("Detección de Manos", image)
+    if cv2.waitKey(1) & 0xFF == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+Mapeo de Coordenadas a Teclas (Piano Virtual)
+Una vez detectados los puntos clave de los dedos, se utilizan las coordenadas del dedo índice (landmark 8) para determinar sobre qué tecla virtual se encuentra y así emitir el sonido correspondiente.
+
+python
+Copy
+Edit
+import pygame.midi
+
+pygame.midi.init()
+player = pygame.midi.Output(0)
+player.set_instrument(0)  # Instrumento Piano
+
+def detectar_nota(x_coord, ancho_ventana=640):
+    # Suponiendo 7 teclas blancas distribuidas en la pantalla
+    seccion = ancho_ventana // 7
+    if x_coord < seccion:
+        return 60  # C4
+    elif x_coord < seccion * 2:
+        return 62  # D4
+    elif x_coord < seccion * 3:
+        return 64  # E4
+    elif x_coord < seccion * 4:
+        return 65  # F4
+    elif x_coord < seccion * 5:
+        return 67  # G4
+    elif x_coord < seccion * 6:
+        return 69  # A4
+    else:
+        return 71  # B4
+
+# Supongamos que se detectó el dedo índice en x=250
+# nota = detectar_nota(250)
+# player.note_on(nota, 127)
+Reproducción de Sonido (PyGame MIDI)
+Las notas musicales se reproducen usando la biblioteca pygame.midi, que permite generar sonidos MIDI en tiempo real en respuesta a los movimientos de la mano detectados.
+
+python
+Copy
+Edit
+def reproducir_nota(nota):
+    player.note_on(nota, 127)
+    time.sleep(0.2)
+    player.note_off(nota, 127)
+
+# Ejemplo de uso:
+# nota = detectar_nota(x)
+# reproducir_nota(nota)
+Galería del Proyecto

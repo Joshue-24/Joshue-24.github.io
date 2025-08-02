@@ -1,61 +1,138 @@
 ---
-title: Sign Language Bridge
-author: Jane Smith
-description: An AI-powered real-time sign language translation system that enables seamless communication between deaf and hearing individuals
+title: Sistema de Estacionamiento Automatizado
+author: Joshue
+description: Gestión integral de estacionamientos mediante visión por computadora e IA, eliminando la intervención manual.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-Sign Language Bridge revolutionizes communication for the deaf community by providing real-time translation between sign language and spoken/written language. Using advanced computer vision and natural language processing, the system captures sign language gestures and converts them into text or speech, while also translating spoken words into animated sign language.
+Este proyecto presenta un sistema de gestión de estacionamientos completamente automatizado, diseñado para optimizar la eficiencia y la experiencia del usuario al eliminar la necesidad de intervención manual. La solución se basa en la integración de visión por computadora e Inteligencia Artificial para automatizar procesos clave, desde la detección de espacios libres hasta el control de acceso vehicular.
 
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-2.png" />
+<BreakoutImage src="/projects/playa/playa_0.png" />
 
-## Technical Challenges
+## Implementación Técnica y Funcionalidades Clave
 
-The biggest hurdle was developing a system that could accurately capture and interpret the nuanced movements of sign language in real-time, including facial expressions and hand positions. We implemented a novel approach using 3D motion tracking and contextual understanding to achieve high accuracy in varied lighting conditions.
+La arquitectura del sistema se compone de módulos interconectados que gestionan la detección, el registro y el control de acceso.
 
-## Project Gallery
+### Detección de Espacios Libres
+
+Utilizamos técnicas de procesamiento de imágenes y modelos de clasificación para identificar el estado de cada plaza de estacionamiento (ocupada o libre) en tiempo real. Esto se logra analizando transmisiones de video de cámaras estratégicamente ubicadas.
+
+```python
+import cv2
+import numpy as np
+
+def detect_parking_spaces(frame, parking_spots_coords):
+    # parking_spots_coords: lista de tuplas (x, y, w, h) para cada plaza
+    status = {}
+    for i, (x, y, w, h) in enumerate(parking_spots_coords):
+        spot_roi = frame[y:y+h, x:x+w]
+        # Convertir a escala de grises y aplicar umbral para simplificar la detección
+        gray_roi = cv2.cvtColor(spot_roi, cv2.COLOR_BGR2GRAY)
+        _, threshold_roi = cv2.threshold(gray_roi, 50, 255, cv2.THRESH_BINARY)
+
+        # Contar píxeles blancos (representando el espacio libre)
+        white_pixels = cv2.countNonZero(threshold_roi)
+
+        # Un umbral simple para determinar si está ocupado o libre
+        if white_pixels < (w * h * 0.1): # Si menos del 10% es blanco, asumimos ocupado
+            status[f"spot_{i+1}"] = "occupied"
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2) # Rojo para ocupado
+        else:
+            status[f"spot_{i+1}"] = "free"
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2) # Verde para libre
+    return frame, status
+
+# Ejemplo de uso (asumiendo que tienes un frame y coordenadas de plazas)
+# parking_spots = [(50, 50, 100, 50), (160, 50, 100, 50)]
+# annotated_frame, current_status = detect_parking_spaces(video_frame, parking_spots)
+# print(current_status)
+```
+
+### Registro Automatizado (Reconocimiento de Matrículas - ANPR)
+
+Para el registro de entrada y salida, se puede integrar un sistema de Reconocimiento Automático de Matrículas (ANPR). Esto permite identificar vehículos sin necesidad de tickets físicos o interacción manual.
+
+```python
+# Pseudocódigo para ANPR (requiere librerías como OpenALPR o EasyOCR)
+# import easyocr
+
+# reader = easyocr.Reader(['en'])
+
+def recognize_license_plate(image_roi):
+    # results = reader.readtext(image_roi)
+    # if results:
+    #     return results[0][1] # Retorna el texto de la matrícula
+    return "ABC-123"
+
+# Ejemplo de integración en el flujo de entrada/salida
+# if vehicle_detected_at_entry_point:
+#     plate_image = capture_plate_image()
+#     plate_number = recognize_license_plate(plate_image)
+#     if plate_number:
+#         log_entry(plate_number, datetime.now())
+```
+
+### Control de Acceso
+
+El sistema gestiona barreras de acceso o puertas basándose en la disponibilidad de plazas y la autorización del vehículo (ej. matrícula registrada). Esto se comunica a través de microcontroladores o APIs.
+
+```python
+# Pseudocódigo para control de barrera
+# import requests # Para comunicación con una API de control de hardware
+
+def control_barrier(action):
+    if action == "open":
+        # requests.post("http://barrier-api.com/open")
+        print("Abriendo barrera...")
+    elif action == "close":
+        # requests.post("http://barrier-api.com/close")
+        print("Cerrando barrera...")
+
+# Lógica de decisión
+# if plate_number_authorized and parking_spots_available:
+#     control_barrier("open")
+# else:
+#     print("Acceso denegado.")
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
-    src="/projects/project-image-2.png"
-    alt="Sign language translation app interface showing gesture recognition"
+    src="/projects/playa/playa_0.png"
+    alt="Vista aérea de un estacionamiento con plazas marcadas como libres u ocupadas."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-3.png"
-    alt="Person using sign language with the translation system"
+    src="/projects/playa/playa_1.png"
+    alt="Cámara de seguridad capturando imágenes para la detección de plazas."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-4.png"
-    alt="Mobile version of the Sign Language Bridge application"
+    src="/projects/playa/playa_2.png"
+    alt="Interfaz de usuario mostrando el mapa del estacionamiento en tiempo real."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-5.png"
-    alt="Group demonstration of the Sign Language Bridge system"
+    src="/projects/playa/playa_3.png"
+    alt="Sistema ANPR reconociendo una matrícula vehicular en la entrada."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-"Sign Language Bridge has transformed how I communicate with my hearing colleagues. It's like having a skilled interpreter available 24/7, giving me true independence in professional settings."
-
-- David Chen, Software Engineer
-
-<BreakoutImage src="/projects/project-image-3.png" />
-
-The project is currently expanding to support more sign languages and developing specialized vocabularies for professional environments.
+Este sistema de estacionamiento automatizado es un claro ejemplo de cómo la Inteligencia Artificial y la visión por computadora pueden modernizar y optimizar infraestructuras cotidianas, mejorando la eficiencia operativa y la experiencia del usuario. Su escalabilidad permite su adaptación a estacionamientos de cualquier tamaño y complejidad.

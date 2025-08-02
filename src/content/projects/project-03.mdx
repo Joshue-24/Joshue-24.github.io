@@ -1,61 +1,131 @@
 ---
-title: AccessGuard
-author: Alex Rivera
-description: A comprehensive web security solution that ensures both robust protection and WCAG 2.1 Level AAA compliance for enterprise websites
+title: Detección de Equipo de Protección Personal (EPP)
+author: Joshue
+description: Sistema de visión por computadora para la supervisión automática del uso de EPP en entornos laborales.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-AccessGuard is a revolutionary web security platform that combines enterprise-grade protection with built-in accessibility compliance checking. The system ensures websites remain secure while maintaining full accessibility, automatically detecting and suggesting fixes for WCAG violations while protecting against security threats.
+Este proyecto aborda un aspecto crítico de la seguridad laboral: la supervisión del uso adecuado del Equipo de Protección Personal (EPP). Desarrollamos un sistema de visión por computadora capaz de detectar automáticamente si los trabajadores están utilizando el EPP requerido (como cascos, chalecos reflectantes, guantes, etc.) en tiempo real. El objetivo es prevenir accidentes y asegurar el cumplimiento de las normativas de seguridad en entornos como obras de construcción, fábricas o almacenes, reduciendo la necesidad de supervisión humana constante.
 
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-4.png" />
+<BreakoutImage src="/projects/Epps/epps_1.png" />
 
-## Technical Challenges
+## Implementación Técnica y Tecnologías Clave
 
-The primary challenge was implementing security measures that wouldn't interfere with assistive technologies. We developed an innovative approach that maintains strict security while ensuring screen readers, keyboard navigation, and other accessibility tools function perfectly, even during security challenges like CAPTCHA verification.
+La base de este sistema es la detección de objetos de alta velocidad y la clasificación de imágenes.
 
-## Project Gallery
+### Detección de Objetos con YOLO (You Only Look Once)
+
+Utilizamos el algoritmo YOLO (You Only Look Once) por su capacidad para realizar detecciones en tiempo real con alta precisión. Se entrenó un modelo YOLO personalizado con un conjunto de datos que incluye imágenes de trabajadores con y sin diferentes tipos de EPP.
+
+```python
+from ultralytics import YOLO
+import cv2
+
+# Cargar el modelo YOLOv8 entrenado para EPP
+model = YOLO('./models/yolov8n_epp.pt') # Ruta a tu modelo entrenado
+
+# Clases de EPP que el modelo puede detectar
+# Asegúrate de que estas coincidan con las clases en tu entrenamiento
+class_names = ["casco", "chaleco", "guantes", "gafas"]
+
+# Inicializar la captura de video
+cap = cv2.VideoCapture(0) # 0 para la cámara web, o ruta a un archivo de video
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Realizar inferencia
+    results = model(frame)
+
+    # Procesar resultados y dibujar bounding boxes
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            conf = round(float(box.conf[0]), 2)
+            cls = int(box.cls[0])
+            label = f"{class_names[cls]}: {conf}"
+
+            # Dibujar rectángulo y etiqueta
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    cv2.imshow("Detección de EPP", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+### Lógica de Cumplimiento y Alertas
+
+Además de la detección, el sistema incluye una lógica para determinar el cumplimiento del EPP. Por ejemplo, si se detecta un trabajador en una zona específica sin casco, se puede generar una alerta.
+
+```python
+# Pseudocódigo para la lógica de cumplimiento
+def check_epp_compliance(detections, required_epp_for_zone):
+    detected_epp = set()
+    for det in detections:
+        detected_epp.add(class_names[int(det.cls[0])])
+
+    missing_epp = required_epp_for_zone - detected_epp
+
+    if missing_epp:
+        print(f"ALERTA: EPP faltante: {missing_epp}")
+        # Aquí se podría activar una alarma, enviar una notificación, etc.
+        return False
+    else:
+        print("Cumplimiento de EPP OK.")
+        return True
+
+# Ejemplo de uso
+# required_epp = {"casco", "chaleco"}
+# current_detections = results[0].boxes # Asumiendo que results es de YOLO
+# check_epp_compliance(current_detections, required_epp)
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
-    src="/projects/project-image-3.png"
-    alt="AccessGuard dashboard showing accessibility compliance metrics"
+    src="/projects/Epps/epps_1.png"
+    alt="Captura de pantalla del sistema de detección de EPP identificando cascos y chalecos."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-4.png"
-    alt="Security and accessibility dual verification system interface"
+    src="/projects/Epps/epps_2.png"
+    alt="Trabajador en una obra de construcción siendo monitoreado por el sistema de EPP."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-5.png"
-    alt="WCAG compliance report generated by AccessGuard"
+    src="/projects/Epps/epps_3.png"
+    alt="Gráfico mostrando el porcentaje de cumplimiento de EPP a lo largo del tiempo."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-6.png"
-    alt="Accessible CAPTCHA alternative developed by AccessGuard"
+    src="/projects/playa/playa_2.png"
+    alt="Interfaz de configuración del sistema de EPP para definir zonas y requisitos."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-"AccessGuard has transformed how we approach web security. We no longer have to choose between robust security and accessibility - we get both in one solution, and our compliance scores have never been better."
-
-- Lisa Chen, Director of Digital Accessibility, Global Tech Solutions
-
-<BreakoutImage src="/projects/project-image-5.png" />
-
-Currently expanding into automated accessibility testing and developing AI-powered remediation suggestions.
+Este sistema de detección de EPP representa un avance significativo en la seguridad industrial, ofreciendo una herramienta proactiva y eficiente para la gestión de riesgos. Al automatizar la supervisión, las empresas pueden mejorar drásticamente la seguridad de sus empleados y asegurar el cumplimiento normativo de manera consistente.

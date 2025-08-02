@@ -1,61 +1,154 @@
 ---
-title: FinanceForAll
-author: Viktor Nakamoto
-description: A fully accessible financial management platform that makes banking and investment tools available to users with various disabilities
+title: Detección de Lenguaje de Señas
+author: Joshue
+description: Proyecto de visión por computadora para interpretar gestos del lenguaje de señas y facilitar la comunicación.
 ---
 
-## Project Overview
+## Visión General del Proyecto
 
-FinanceForAll revolutionizes personal banking by making financial tools accessible to everyone. The platform provides screen-reader optimized interfaces, keyboard-only navigation, and simplified layouts for cognitive accessibility, ensuring equal access to banking, investment, and financial planning tools.
+Este proyecto se enfoca en la accesibilidad y la comunicación, desarrollando un sistema de visión por computadora capaz de interpretar gestos del lenguaje de señas en tiempo real. Su objetivo es tender un puente de comunicación entre personas sordas y oyentes, con aplicaciones potenciales en la educación, la atención al cliente y la vida diaria. El sistema analiza el movimiento de las manos y la postura corporal para reconocer señas y asociarlas con su significado.
 
+import BlockQuote from '@components/BlockQuote.astro'
 import BreakoutImage from '@components/BreakoutImage.astro'
 import { Image } from 'astro:assets'
 
-<BreakoutImage src="/projects/project-image-3.png" />
+<BreakoutImage src="/projects/leng_se_as/leng_1.png" />
 
-## Technical Challenges
+## Implementación Técnica y Componentes Clave
 
-The primary challenge was creating complex financial interfaces that remained fully accessible without sacrificing functionality. We developed a modular interface system that adapts to different assistive technologies while maintaining secure banking protocols and real-time market data integration.
+La solución se basa en la combinación de librerías de procesamiento de imágenes y frameworks de detección de puntos clave.
 
-## Project Gallery
+### Procesamiento de Imágenes con OpenCV
+
+OpenCV (Open Source Computer Vision Library) se utiliza para la captura de video, preprocesamiento de imágenes (ej. normalización, filtrado) y visualización de los resultados.
+
+```python
+import cv2
+
+# Inicializar la captura de video
+cap = cv2.VideoCapture(0) # 0 para la cámara web
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Voltear el frame horizontalmente para una vista de espejo (opcional)
+    frame = cv2.flip(frame, 1)
+
+    # Aquí iría el procesamiento con MediaPipe
+
+    cv2.imshow('Detección de Lenguaje de Señas', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+### Seguimiento de Manos y Postura con MediaPipe
+
+MediaPipe, una librería de Google, es fundamental para la detección de puntos clave (landmarks) en las manos y el cuerpo. Estos landmarks se utilizan como entrada para un modelo de clasificación que identifica las señas.
+
+```python
+import cv2
+import mediapipe as mp
+
+# Inicializar MediaPipe Hands y Pose
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
+mp_drawing = mp.solutions.drawing_utils
+
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results_hands = hands.process(frame_rgb)
+
+    if results_hands.multi_hand_landmarks:
+        for hand_landmarks in results_hands.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+            # Aquí se extraerían las coordenadas de los landmarks para la clasificación de señas
+            # Por ejemplo: hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].x
+
+    cv2.imshow('Detección de Manos con MediaPipe', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+### Clasificación de Señas (Modelo de Machine Learning)
+
+Los datos de los landmarks de MediaPipe se utilizan como entrada para un modelo de Machine Learning (ej. un clasificador de Red Neuronal, SVM, o Random Forest) entrenado para reconocer diferentes señas. El entrenamiento se realiza con un conjunto de datos de gestos de lenguaje de señas.
+
+```python
+# Pseudocódigo para la clasificación de señas
+# from sklearn.ensemble import RandomForestClassifier
+# import numpy as np
+
+# # Cargar modelo pre-entrenado y etiquetas
+# classifier = RandomForestClassifier()
+# # classifier.load('sign_language_model.pkl')
+# sign_labels = ["hola", "gracias", "si", "no"]
+
+def classify_sign(landmarks_data):
+    # landmarks_data: array plano de coordenadas x, y, z de los landmarks
+    # prediction = classifier.predict(np.array([landmarks_data]))
+    # return sign_labels[prediction[0]]
+    return "Hola" # Ejemplo de retorno
+
+# Dentro del bucle de video, después de obtener los landmarks:
+# if results_hands.multi_hand_landmarks:
+#     for hand_landmarks in results_hands.multi_hand_landmarks:
+#         landmarks_flat = []
+#         for landmark in hand_landmarks.landmark:
+#             landmarks_flat.extend([landmark.x, landmark.y, landmark.z])
+#         detected_sign = classify_sign(landmarks_flat)
+#         cv2.putText(frame, detected_sign, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+```
+
+## Galería del Proyecto
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <Image
-    src="/projects/project-image-5.png"
-    alt="FinanceForAll accessible banking dashboard"
+    src="/projects/leng_se_as/leng_1.png"
+    alt="Persona realizando una seña y el sistema detectando los puntos clave de la mano."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-4.png"
-    alt="Screen-reader optimized investment charts"
+    src="/projects/leng_se_as/leng_2.png"
+    alt="Visualización de la interpretación de una seña en texto en tiempo real."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
-    src="/projects/project-image-3.png"
-    alt="Keyboard-navigable financial planning tools"
+    src="/projects/leng_se_as/leng_3.png"
+    alt="Diagrama de flujo del sistema de detección de lenguaje de señas."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
   <Image
     src="/projects/project-image-1.png"
-    alt="Simplified interface for cognitive accessibility"
+    alt="Aplicación móvil mostrando la traducción de lenguaje de señas."
     width={1200}
     height={600}
     class="h-[250px] w-full rounded-lg object-cover"
   />
 </div>
 
-## Testimonial
+## Conclusión
 
-"FinanceForAll has given me true financial independence. As a blind person, I can now manage my investments and banking with the same ease as anyone else. The accessible charts and financial data are game-changing."
-
-- James Wu, Software Developer
-
-<BreakoutImage src="/projects/project-image-4.png" />
-
-Expanding into voice-controlled trading features and developing more accessible financial education tools.
+Este proyecto es un paso significativo hacia la creación de herramientas de comunicación más inclusivas. Al aprovechar el poder de la visión por computadora y el aprendizaje automático, podemos derribar barreras y facilitar interacciones más ricas y significativas entre todas las personas.
