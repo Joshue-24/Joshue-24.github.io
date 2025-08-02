@@ -69,6 +69,41 @@ h2 {
     margin-top: 0;
 }
 
+.blog-posts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.blog-post {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.blog-post h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.blog-post .post-date {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.blog-post .read-more {
+    display: inline-block;
+    margin-top: 10px;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.blog-post .read-more:hover {
+    text-decoration: underline;
+}
+
 footer {
     text-align: center;
     padding: 20px;
